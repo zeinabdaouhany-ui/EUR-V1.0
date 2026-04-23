@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EU Regulatory Matrix · Zeinab Daouhany Bovy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f8f7f4;color:#1a1a2e;font-family:'DM Sans',sans-serif;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#f0eeea;}
+::-webkit-scrollbar-thumb{background:#c8c4bc;border-radius:4px;}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState}=React;
+const REGS=[
+{id:"GDPR",name:"GDPR",color:"#2563eb",domain:"Data & Privacy"},
+{id:"AI_ACT",name:"AI Act",color:"#7c3aed",domain:"AI & Automation"},
+{id:"NIS2",name:"NIS2",color:"#dc2626",domain:"Cybersecurity"},
+{id:"CRA",name:"CRA",color:"#ea580c",domain:"Cybersecurity"},
+{id:"DSA",name:"DSA",color:"#0891b2",domain:"Digital Platforms"},
+{id:"DMA",name:"DMA",color:"#0284c7",domain:"Digital Platforms"},
+{id:"DORA",name:"DORA",color:"#059669",domain:"Finance"},
+{id:"MDR",name:"MDR",color:"#db2777",domain:"Healthcare"},
+{id:"IVDR",name:"IVDR",color:"#e11d48",domain:"Healthcare"},
+{id:"EIDAS",name:"eIDAS",color:"#6d28d9",domain:"Digital Identity"},
+{id:"DATA_ACT",name:"Data Act",color:"#0e7490",domain:"Data & Privacy"},
+{id:"DGA",name:"DGA",color:"#047857",domain:"Data & Privacy"},
+{id:"PSD2",name:"PSD2",color:"#b45309",domain:"Finance"},
+{id:"RED",name:"RED",color:"#c2410c",domain:"Hardware"},
+{id:"GPSR",name:"GPSR",color:"#65a30d",domain:"Product Safety"},
+{id:"CHIPS",name:"Chips Act",color:"#4f46e5",domain:"Hardware"},
+{id:"ECODESIGN",name:"Ecodesign",color:"#16a34a",domain:"Sustainability"},
+{id:"EHDS",name:"EHDS",color:"#be185d",domain:"Healthcare"},
+{id:"CLOUD_COC",name:"Cloud CoC",color:"#475569",domain:"Cloud"},
+];
+const RC={CRITICAL:"#dc2626",HIGH:"#ea580c",MEDIUM:"#d97706",LOW:"#16a34a"};
+const DET={
+data_protection:{
+GDPR:{risk:"CRITICAL",summary:"Core regulation. Legal basis required for all processing. DPO mandatory for large-scale processing. Fines up to 4% global turnover.",articles:"Art. 5-11, Art. 13-14 (transparency), Art. 25 (privacy by design), Art. 37-39 (DPO)"},
+AI_ACT:{risk:"HIGH",summary:"High-risk AI systems processing personal data must comply with GDPR. Transparency to individuals about AI decisions required.",articles:"Art. 10 (data governance), Art. 13 (transparency)"},
+EIDAS:{risk:"HIGH",summary:"Identity data processed with strong protection. Trust service providers act as data controllers.",articles:"Art. 8 (assurance levels), Art. 17 (supervision)"},
+DATA_ACT:{risk:"HIGH",summary:"Data sharing obligations must respect GDPR. Personal data portability rights reinforced.",articles:"Art. 5 (data access), Art. 12 (cloud switching)"},
+DGA:{risk:"HIGH",summary:"Re-use of public sector personal data must comply with GDPR safeguards.",articles:"Art. 5 (re-use conditions), Art. 12 (intermediaries)"},
+EHDS:{risk:"CRITICAL",summary:"Health data is special category. Strict access controls, secondary use requires explicit permit from health data access body.",articles:"Art. 33 (access bodies), Art. 52 (data permits)"},
+CLOUD_COC:{risk:"HIGH",summary:"Cloud providers acting as processors must implement GDPR-compliant technical and organisational measures.",articles:"Section 5 (data protection controls)"},
+DEFAULT:{risk:"MEDIUM",summary:"GDPR applies to any processing of personal data within the scope of this regulation.",articles:"GDPR Art. 5, Art. 24 (controller obligations)"}},
+incident_reporting:{
+GDPR:{risk:"HIGH",summary:"Personal data breaches reported to supervisory authority within 72 hours. Individuals notified if high risk to their rights and freedoms.",articles:"Art. 33 (72h notification), Art. 34 (communication to data subjects)"},
+AI_ACT:{risk:"HIGH",summary:"Serious incidents from high-risk AI systems reported within 15 days. Death of a person: immediate report.",articles:"Art. 73 (serious incident reporting)"},
+NIS2:{risk:"CRITICAL",summary:"Early warning within 24h, full notification within 72h, final report within 1 month. Essential and important entities.",articles:"Art. 23 (reporting obligations)"},
+CRA:{risk:"CRITICAL",summary:"Actively exploited vulnerabilities reported to ENISA within 24h. Severe incidents within 72h.",articles:"Art. 14 (vulnerability and incident notification)"},
+DORA:{risk:"CRITICAL",summary:"Major ICT incidents reported to competent authority. Timelines depend on severity. Register of all incidents maintained.",articles:"Art. 19 (classification), Art. 20 (reporting)"},
+MDR:{risk:"HIGH",summary:"Serious incidents and field safety corrective actions reported to national competent authority.",articles:"Art. 87 (serious incident reporting)"},
+IVDR:{risk:"HIGH",summary:"Performance failures and serious incidents reported. Same framework as MDR.",articles:"Art. 82 (serious incident reporting)"},
+PSD2:{risk:"HIGH",summary:"Major operational or security incidents reported to competent authority and affected users.",articles:"Art. 96 (incident reporting)"},
+CLOUD_COC:{risk:"HIGH",summary:"Security incidents affecting customer personal data reported. Timelines aligned with GDPR Art. 33.",articles:"Section 6 (security incident management)"},
+DEFAULT:{risk:"MEDIUM",summary:"Incident notification obligations apply within the scope of this regulation.",articles:"See regulation-specific reporting articles"}},
+risk_management:{
+GDPR:{risk:"HIGH",summary:"DPIA mandatory for high-risk processing. Risk-based approach throughout. Regular review of processing activities.",articles:"Art. 35 (DPIA), Art. 32 (security of processing)"},
+AI_ACT:{risk:"CRITICAL",summary:"Mandatory risk management system for high-risk AI covering entire lifecycle. Continuous post-market monitoring.",articles:"Art. 9 (risk management system)"},
+NIS2:{risk:"HIGH",summary:"Cybersecurity risk management mandatory including supply chain risk and business continuity planning.",articles:"Art. 21 (cybersecurity risk management)"},
+CRA:{risk:"HIGH",summary:"Security risk assessment before market placement. Vulnerability handling process required throughout support period.",articles:"Art. 13 (manufacturer obligations)"},
+DORA:{risk:"CRITICAL",summary:"ICT risk management framework mandatory. Tested and reviewed annually. ICT third-party risk fully included.",articles:"Art. 5-15 (ICT risk management framework)"},
+MDR:{risk:"HIGH",summary:"Risk management throughout product lifecycle per ISO 14971. Benefit-risk analysis documented and updated.",articles:"Annex I, Art. 10(2)"},
+IVDR:{risk:"HIGH",summary:"Performance risk assessment mandatory. Risk-benefit analysis for each diagnostic claim documented.",articles:"Annex I, Art. 10(2)"},
+GPSR:{risk:"HIGH",summary:"Safety risk assessment before placing product on market. Written documentation maintained.",articles:"Art. 6-8 (safety obligations)"},
+CLOUD_COC:{risk:"HIGH",summary:"Information security risk management process with regular review and documented risk treatment plan.",articles:"Section 6.1 (information security management)"},
+DEFAULT:{risk:"MEDIUM",summary:"Risk assessment and mitigation measures required under this regulation.",articles:"See regulation-specific risk provisions"}},
+conformity:{
+AI_ACT:{risk:"CRITICAL",summary:"Conformity assessment before deployment of high-risk AI. Third-party assessment for Annex III systems. EU declaration of conformity mandatory.",articles:"Art. 43 (conformity assessment), Art. 47 (declaration of conformity)"},
+CRA:{risk:"HIGH",summary:"CE marking mandatory. Internal control or third-party certification depending on risk class.",articles:"Art. 32 (conformity assessment procedures)"},
+MDR:{risk:"CRITICAL",summary:"Notified body mandatory for class IIa, IIb, III devices. CE marking required before market placement.",articles:"Art. 52 (conformity assessment), Art. 18 (CE marking)"},
+IVDR:{risk:"CRITICAL",summary:"CE marking mandatory. Class B, C, D require notified body. EU declaration of conformity.",articles:"Art. 48 (conformity assessment), Art. 18 (CE marking)"},
+RED:{risk:"HIGH",summary:"CE marking mandatory for radio equipment. Manufacturer declares conformity with essential requirements.",articles:"Art. 10 (manufacturer obligations), Art. 19-20 (CE marking)"},
+GPSR:{risk:"HIGH",summary:"Products must demonstrate safety before market placement. Technical documentation and traceability required.",articles:"Art. 6 (safety obligation), Art. 9 (traceability)"},
+ECODESIGN:{risk:"HIGH",summary:"CE marking required. Conformity with ecodesign requirements demonstrated through technical file.",articles:"Art. 28 (conformity assessment)"},
+EHDS:{risk:"MEDIUM",summary:"EHR systems require certification to claim interoperability compliance.",articles:"Art. 15 (certification of EHR systems)"},
+DEFAULT:{risk:"LOW",summary:"Conformity assessment is not a primary requirement under this regulation.",articles:"N/A"}},
+transparency:{
+GDPR:{risk:"HIGH",summary:"Clear information to data subjects about processing purposes, legal basis, retention, and rights. Privacy notice mandatory.",articles:"Art. 13-14 (information obligations)"},
+AI_ACT:{risk:"CRITICAL",summary:"High-risk AI: transparency to deployers and users. AI-generated content labelled. Chatbots must disclose AI nature.",articles:"Art. 13 (transparency), Art. 50 (labelling obligations)"},
+DSA:{risk:"HIGH",summary:"Recommender systems explained; users can opt out. Full ad targeting transparency. Annual reports for VLOPs.",articles:"Art. 27 (recommender systems), Art. 39 (ad repository)"},
+DMA:{risk:"HIGH",summary:"Gatekeepers transparent about ranking criteria, data use, and business terms.",articles:"Art. 6 (obligations for gatekeepers)"},
+DATA_ACT:{risk:"HIGH",summary:"Data holders proactively inform users about generated data and access conditions.",articles:"Art. 4 (obligation to make data available)"},
+DGA:{risk:"HIGH",summary:"Data intermediaries publish conditions for data sharing. Public register of recognised intermediaries.",articles:"Art. 11 (transparency requirements)"},
+PSD2:{risk:"HIGH",summary:"Clear upfront information on fees, exchange rates, and all conditions before contract.",articles:"Art. 45-52 (information requirements)"},
+EHDS:{risk:"HIGH",summary:"Health data access bodies publish granted permits, justifications, and outcomes of secondary use.",articles:"Art. 42 (transparency obligations)"},
+CLOUD_COC:{risk:"HIGH",summary:"CSPs publish clear information on service scope, data location, security measures, and subprocessors.",articles:"Section 5.1 (transparency controls)"},
+DEFAULT:{risk:"MEDIUM",summary:"Disclosure obligations to users and/or authorities apply under this regulation.",articles:"See regulation-specific transparency provisions"}},
+technical_docs:{
+AI_ACT:{risk:"HIGH",summary:"Technical documentation required before market placement. Must enable full conformity assessment. Retained 10 years minimum.",articles:"Art. 11 (technical documentation), Annex IV"},
+CRA:{risk:"HIGH",summary:"Documentation covering design, development, and vulnerability handling. Retained 10 years.",articles:"Art. 31 (technical documentation), Annex V"},
+DORA:{risk:"HIGH",summary:"ICT asset inventory, process documentation, incident logs, and backup records. Full audit trail mandatory.",articles:"Art. 8 (identification), Art. 12 (backup)"},
+MDR:{risk:"CRITICAL",summary:"Comprehensive technical file including design, manufacturing, and clinical evaluation. Retained minimum 15 years.",articles:"Art. 10(4), Annex II-III"},
+IVDR:{risk:"CRITICAL",summary:"Technical documentation including all performance studies and evaluations. 15-year retention.",articles:"Art. 10(4), Annex II-III"},
+RED:{risk:"HIGH",summary:"Technical documentation demonstrating compliance with all essential requirements before CE marking.",articles:"Art. 21 (technical documentation)"},
+GPSR:{risk:"HIGH",summary:"Technical documentation for market surveillance. Product traceability records maintained.",articles:"Art. 9 (traceability obligations)"},
+ECODESIGN:{risk:"HIGH",summary:"Product information sheet and technical file for all sustainability performance requirements.",articles:"Art. 31 (technical documentation)"},
+CLOUD_COC:{risk:"HIGH",summary:"Security policies, processing records, and audit logs maintained and available to monitoring body.",articles:"Section 5.8 (records of processing)"},
+DEFAULT:{risk:"MEDIUM",summary:"Technical documentation requirements apply under this regulation.",articles:"See regulation-specific documentation provisions"}},
+cybersecurity:{
+GDPR:{risk:"HIGH",summary:"Appropriate technical and organisational measures. Encryption and pseudonymisation encouraged. Regular security testing.",articles:"Art. 32 (security of processing)"},
+NIS2:{risk:"CRITICAL",summary:"Multi-layer security: network, access control, encryption, supply chain, vulnerability management, MFA mandatory.",articles:"Art. 21 (cybersecurity risk-management measures)"},
+CRA:{risk:"CRITICAL",summary:"Security by default, no known exploitable vulnerabilities at launch, vulnerability disclosure policy, security updates 5+ years.",articles:"Annex I (essential cybersecurity requirements)"},
+DORA:{risk:"CRITICAL",summary:"ICT security policies, penetration testing (TLPT), threat intelligence, third-party ICT risk controls.",articles:"Art. 9 (protection), Art. 26 (TLPT)"},
+MDR:{risk:"HIGH",summary:"IT security including cybersecurity required for software-enabled medical devices throughout lifecycle.",articles:"Annex I, Section 17 (IT security)"},
+IVDR:{risk:"HIGH",summary:"Software security requirements aligned with MDR for software-enabled diagnostic devices.",articles:"Annex I, Section 16"},
+EIDAS:{risk:"HIGH",summary:"Trust service providers implement security measures appropriate to risk. Annual security assessments.",articles:"Art. 19 (security requirements for trust services)"},
+PSD2:{risk:"HIGH",summary:"Strong customer authentication (SCA) mandatory. Secure communication channels. Regular security testing.",articles:"Art. 97-98 (strong customer authentication)"},
+RED:{risk:"HIGH",summary:"Radio equipment must protect network integrity, prevent harm, and safeguard personal data.",articles:"Art. 3(3)(d-f) (essential cybersecurity requirements)"},
+EHDS:{risk:"HIGH",summary:"Secure processing environments for health data. State-of-the-art technical measures mandatory.",articles:"Art. 50 (secure processing environments)"},
+CLOUD_COC:{risk:"HIGH",summary:"ISMS required. Controls aligned with ISO 27001. Annual review.",articles:"Section 6 (security controls catalogue)"},
+DEFAULT:{risk:"MEDIUM",summary:"Security measures required as part of this regulation.",articles:"See regulation-specific security provisions"}},
+supply_chain:{
+GDPR:{risk:"HIGH",summary:"Data processors bound by written contract. Sub-processors require prior controller authorisation.",articles:"Art. 28 (processor obligations), Art. 29"},
+AI_ACT:{risk:"HIGH",summary:"Providers responsible for third-party AI components. Supply chain transparency required for high-risk AI.",articles:"Art. 25 (obligations along the AI value chain)"},
+NIS2:{risk:"HIGH",summary:"Supply chain cybersecurity policies mandatory. Security of ICT products from all suppliers assessed.",articles:"Art. 21(2)(d) (supply chain security)"},
+CRA:{risk:"HIGH",summary:"Manufacturers responsible for all components incorporated. Due diligence on third-party components required.",articles:"Art. 13(5) (third-party components)"},
+DORA:{risk:"CRITICAL",summary:"Register of all ICT third-party providers mandatory. Critical providers subject to EU direct oversight. Exit strategies required.",articles:"Art. 28-30 (ICT third-party risk management)"},
+MDR:{risk:"HIGH",summary:"Importers and distributors have defined legal obligations. QMS must cover supplier management.",articles:"Art. 13-14 (importer/distributor obligations)"},
+IVDR:{risk:"HIGH",summary:"Same supply chain obligations as MDR for in vitro diagnostic devices.",articles:"Art. 13-14"},
+GPSR:{risk:"HIGH",summary:"All economic operators have explicit product safety obligations.",articles:"Art. 10-13 (economic operators)"},
+CHIPS:{risk:"CRITICAL",summary:"Supply chain resilience is the core policy objective. Commission monitors and can impose priority production orders.",articles:"Art. 18-19 (monitoring and crisis response)"},
+CLOUD_COC:{risk:"HIGH",summary:"Subprocessor management, notification obligations, and due diligence before engaging subprocessors.",articles:"Section 5.6 (subprocessors)"},
+DEFAULT:{risk:"MEDIUM",summary:"Third-party and supply chain obligations apply within this regulation.",articles:"See regulation-specific provisions"}},
+interoperability:{
+DMA:{risk:"HIGH",summary:"Gatekeepers must provide interoperability to third-party providers. Messaging interoperability mandatory.",articles:"Art. 6(7) (interoperability obligation)"},
+EIDAS:{risk:"CRITICAL",summary:"Cross-border recognition of electronic identities mandatory. Interoperability framework across all Member States.",articles:"Art. 12 (interoperability framework)"},
+DATA_ACT:{risk:"HIGH",summary:"Cloud switching rights. Data portability in open standardised formats. Smart contract interoperability.",articles:"Art. 23-31 (switching and interoperability)"},
+DGA:{risk:"HIGH",summary:"Common European data spaces built on FAIR principles. Interoperability standards for data intermediaries.",articles:"Art. 22 (European data innovation board)"},
+PSD2:{risk:"HIGH",summary:"Open banking APIs mandatory. Third-party providers must have standardised access to payment accounts.",articles:"Art. 66-67 (access to payment accounts)"},
+RED:{risk:"HIGH",summary:"Radio equipment must not cause harmful interference. Common charger standard mandated.",articles:"Art. 3 (essential requirements)"},
+EHDS:{risk:"CRITICAL",summary:"EHR systems must be interoperable across the entire EU. Cross-border digital health infrastructure established.",articles:"Art. 5-12 (interoperability requirements)"},
+CLOUD_COC:{risk:"HIGH",summary:"Data portability and switching interoperability between cloud providers is a core obligation.",articles:"Section 5.5 (data portability and switching)"},
+DEFAULT:{risk:"LOW",summary:"Interoperability is not a primary obligation under this regulation.",articles:"N/A"}},
+market_surveillance:{
+DEFAULT:{risk:"HIGH",summary:"Competent national authorities oversee compliance. Powers include inspections, audits, product withdrawal, and fines. Coordinated at EU level.",articles:"See regulation Chapter on supervision and enforcement"}},
+penalties:{
+GDPR:{risk:"CRITICAL",summary:"Up to 20M EUR or 4% of global annual turnover, whichever is higher. Two-tier system based on violation severity.",articles:"Art. 83 (general conditions for imposing fines)"},
+AI_ACT:{risk:"CRITICAL",summary:"Prohibited AI: up to 35M EUR or 7% turnover. Other violations: up to 15M EUR or 3%. Incorrect info: up to 7.5M EUR or 1%.",articles:"Art. 99 (penalties)"},
+NIS2:{risk:"HIGH",summary:"Essential entities: up to 10M EUR or 2% global turnover. Important entities: up to 7M EUR or 1.4%.",articles:"Art. 34 (penalties)"},
+CRA:{risk:"HIGH",summary:"Non-compliance with essential requirements: up to 15M EUR or 2.5% global turnover.",articles:"Art. 64 (penalties)"},
+DSA:{risk:"HIGH",summary:"Up to 6% of global annual turnover. Up to 1% for incorrect or misleading information.",articles:"Art. 74 (fines)"},
+DMA:{risk:"CRITICAL",summary:"Up to 10% of global annual turnover. Up to 20% for repeated infringement within 8 years.",articles:"Art. 26 (fines)"},
+DORA:{risk:"HIGH",summary:"Defined by Member States. Must be effective, proportionate, dissuasive. Periodic penalty payments possible.",articles:"Art. 50 (penalties and administrative measures)"},
+DATA_ACT:{risk:"HIGH",summary:"Member States define penalties. Must be effective, proportionate, and dissuasive.",articles:"Art. 40 (penalties)"},
+DGA:{risk:"HIGH",summary:"Financial penalties for data intermediary infringements defined by Member States.",articles:"Art. 34 (penalties)"},
+PSD2:{risk:"HIGH",summary:"Member States define penalties ensuring effectiveness and proportionality.",articles:"Art. 103 (penalties)"},
+GPSR:{risk:"HIGH",summary:"Member States define penalties reflecting severity of non-compliance.",articles:"Art. 44 (penalties)"},
+CHIPS:{risk:"MEDIUM",summary:"Up to 300K EUR for information violations. Periodic payments up to 1.5% daily turnover for priority order non-compliance.",articles:"Art. 33 (penalties)"},
+DEFAULT:{risk:"MEDIUM",summary:"Penalties defined by Member States or EU authority. Must be effective, proportionate, and dissuasive.",articles:"See enforcement chapter"}},
+user_rights:{
+GDPR:{risk:"HIGH",summary:"Rights to access, rectification, erasure, portability, restriction, and objection. Right against automated decisions.",articles:"Art. 15-22 (data subject rights)"},
+DSA:{risk:"HIGH",summary:"Right to appeal content moderation. Right to non-targeted advertising. Transparent recommender systems.",articles:"Art. 17 (statement of reasons), Art. 20 (complaints)"},
+DMA:{risk:"HIGH",summary:"Users can uninstall pre-installed apps, use alternative default services, receive fair commercial terms.",articles:"Art. 6 (obligations for gatekeepers)"},
+EIDAS:{risk:"HIGH",summary:"Right to use electronic identity across all EU Member States. Right to use trust services cross-border.",articles:"Art. 6 (mutual recognition)"},
+DATA_ACT:{risk:"HIGH",summary:"Users have right to access all data generated by their connected products and share with third parties.",articles:"Art. 4 (right of access to data)"},
+DGA:{risk:"HIGH",summary:"Right to donate personal data for the general interest. Right to withdraw consent at any time.",articles:"Art. 16 (data altruism organisations)"},
+PSD2:{risk:"HIGH",summary:"Right to access account data via third parties. Right to refunds for unauthorised transactions.",articles:"Art. 66-67 (access rights), Art. 73 (liability)"},
+EHDS:{risk:"HIGH",summary:"Patient right to access, download, and share electronic health data. Right to restrict access.",articles:"Art. 3-4 (rights of natural persons)"},
+DEFAULT:{risk:"LOW",summary:"Individual user rights are not a primary focus of this regulation.",articles:"N/A"}},
+human_oversight:{
+GDPR:{risk:"HIGH",summary:"Right not to be subject to solely automated decisions with legal effects. Human review mechanism required on request.",articles:"Art. 22 (automated individual decision-making)"},
+AI_ACT:{risk:"CRITICAL",summary:"Human oversight measures built into high-risk AI systems by design. Must be able to override, interrupt, or stop the system at any time.",articles:"Art. 14 (human oversight)"},
+DSA:{risk:"HIGH",summary:"Automated content moderation must include human review mechanism. Appeals process mandatory.",articles:"Art. 20 (internal complaint-handling system)"},
+MDR:{risk:"HIGH",summary:"Clinical decisions supported by AI-enabled devices require oversight by qualified medical professional.",articles:"Annex I (general safety and performance requirements)"},
+IVDR:{risk:"HIGH",summary:"Diagnostic outputs from AI systems require interpretation by qualified healthcare professional.",articles:"Annex I"},
+DEFAULT:{risk:"LOW",summary:"Human oversight is not a primary obligation under this regulation.",articles:"N/A"}},
+registration:{
+GDPR:{risk:"HIGH",summary:"Records of processing activities mandatory. DPO registered with supervisory authority where required.",articles:"Art. 30 (records of processing), Art. 37(7) (DPO registration)"},
+AI_ACT:{risk:"HIGH",summary:"High-risk AI systems registered in EU public database before deployment.",articles:"Art. 71 (EU database for high-risk AI)"},
+NIS2:{risk:"HIGH",summary:"Essential and important entities register with national competent authority.",articles:"Art. 3 (identification and registration)"},
+DORA:{risk:"HIGH",summary:"Register of all ICT third-party service providers submitted to supervisory authorities and ESAs.",articles:"Art. 28(3) (register of information)"},
+MDR:{risk:"CRITICAL",summary:"All manufacturers, devices, and authorised representatives registered in EUDAMED before market placement. UDI mandatory.",articles:"Art. 29-31 (registration in EUDAMED)"},
+IVDR:{risk:"CRITICAL",summary:"Devices registered in EUDAMED. Mandatory UDI assignment for all diagnostic devices.",articles:"Art. 26-28 (registration and identification)"},
+DSA:{risk:"HIGH",summary:"Platforms register with Digital Services Coordinator. VLOPs designated by Commission.",articles:"Art. 24 (transparency for online advertising)"},
+DMA:{risk:"HIGH",summary:"Gatekeepers formally designated by Commission following notification.",articles:"Art. 3 (designation of gatekeepers)"},
+DGA:{risk:"HIGH",summary:"Data intermediation services providers notify competent authority before operations. Public register maintained.",articles:"Art. 10 (conditions for notification)"},
+PSD2:{risk:"HIGH",summary:"Payment service providers must be authorised or registered with national competent authority.",articles:"Art. 11 (authorisation), Art. 32 (registration)"},
+CHIPS:{risk:"HIGH",summary:"Integrated production facilities must formally apply for and receive recognition.",articles:"Art. 9-10 (recognition as integrated production facility)"},
+EHDS:{risk:"HIGH",summary:"EHR systems registered in EU database. Health data access bodies formally established.",articles:"Art. 32 (database of EHR systems)"},
+CLOUD_COC:{risk:"HIGH",summary:"CSPs register adherence with accredited monitoring body. Listed in public register.",articles:"Section 7 (monitoring and enforcement)"},
+DEFAULT:{risk:"MEDIUM",summary:"Registration or notification to competent authorities required.",articles:"See regulation-specific registration provisions"}},
+data_governance:{
+GDPR:{risk:"HIGH",summary:"Data minimisation, purpose limitation, accuracy, and storage limitation principles. Governance via DPO, records, and accountability.",articles:"Art. 5 (principles), Art. 24 (controller responsibility)"},
+AI_ACT:{risk:"HIGH",summary:"Training, validation, and test data must be relevant, representative, error-free. Data governance practices documented.",articles:"Art. 10 (data and data governance)"},
+DATA_ACT:{risk:"HIGH",summary:"Rules on who can access and use data generated by connected products. Standardised sharing agreements.",articles:"Art. 4-6 (access to and use of data)"},
+DGA:{risk:"CRITICAL",summary:"Framework for data altruism, intermediaries, and public sector re-use. Governance structures at national and EU level.",articles:"Art. 2-25 (core governance framework)"},
+EHDS:{risk:"CRITICAL",summary:"Health data governance at EU and national level through health data access bodies. Secondary use governed by permits.",articles:"Art. 36-43 (health data access bodies)"},
+CLOUD_COC:{risk:"HIGH",summary:"Data lifecycle management, secure deletion on contract termination, portability. All processing records maintained.",articles:"Section 5.3-5.4 (data management controls)"},
+DEFAULT:{risk:"LOW",summary:"Data governance is not a primary obligation under this regulation.",articles:"N/A"}}
+};
+const THEMES=[
+{id:"data_protection",name:"Data Protection & Privacy",icon:"🔒",category:"DATA"},
+{id:"incident_reporting",name:"Incident Reporting",icon:"🚨",category:"SECURITY"},
+{id:"risk_management",name:"Risk Management",icon:"⚠️",category:"GOVERNANCE"},
+{id:"conformity",name:"Conformity Assessment & CE Marking",icon:"✅",category:"COMPLIANCE"},
+{id:"transparency",name:"Transparency & Explainability",icon:"🔍",category:"GOVERNANCE"},
+{id:"technical_docs",name:"Technical Documentation",icon:"📋",category:"COMPLIANCE"},
+{id:"cybersecurity",name:"Cybersecurity Requirements",icon:"🛡️",category:"SECURITY"},
+{id:"supply_chain",name:"Third-Party & Supply Chain",icon:"🔗",category:"GOVERNANCE"},
+{id:"interoperability",name:"Interoperability & Standards",icon:"🔄",category:"DATA"},
+{id:"market_surveillance",name:"Market Surveillance",icon:"🏛️",category:"COMPLIANCE"},
+{id:"penalties",name:"Penalties & Fines",icon:"⚖️",category:"COMPLIANCE"},
+{id:"user_rights",name:"User / Individual Rights",icon:"👤",category:"GOVERNANCE"},
+{id:"human_oversight",name:"Human Oversight & Control",icon:"🧠",category:"GOVERNANCE"},
+{id:"registration",name:"Registration & Notification",icon:"📝",category:"COMPLIANCE"},
+{id:"data_governance",name:"Data Governance & Quality",icon:"🗄️",category:"DATA"},
+];
+const SC={
+data_protection:{GDPR:2,AI_ACT:1,NIS2:1,CRA:1,DSA:1,DMA:1,DORA:1,MDR:1,IVDR:1,EIDAS:2,DATA_ACT:2,DGA:2,PSD2:1,RED:1,GPSR:0,CHIPS:0,ECODESIGN:0,EHDS:2,CLOUD_COC:2},
+incident_reporting:{GDPR:2,AI_ACT:2,NIS2:2,CRA:2,DSA:1,DMA:0,DORA:2,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:0,DGA:0,PSD2:2,RED:0,GPSR:1,CHIPS:1,ECODESIGN:0,EHDS:1,CLOUD_COC:2},
+risk_management:{GDPR:2,AI_ACT:2,NIS2:2,CRA:2,DSA:1,DMA:1,DORA:2,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:1,DGA:1,PSD2:2,RED:1,GPSR:2,CHIPS:1,ECODESIGN:1,EHDS:1,CLOUD_COC:2},
+conformity:{GDPR:0,AI_ACT:2,NIS2:0,CRA:2,DSA:0,DMA:0,DORA:0,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:0,DGA:0,PSD2:0,RED:2,GPSR:2,CHIPS:1,ECODESIGN:2,EHDS:1,CLOUD_COC:0},
+transparency:{GDPR:2,AI_ACT:2,NIS2:1,CRA:1,DSA:2,DMA:2,DORA:1,MDR:1,IVDR:1,EIDAS:1,DATA_ACT:2,DGA:2,PSD2:2,RED:0,GPSR:1,CHIPS:0,ECODESIGN:1,EHDS:2,CLOUD_COC:2},
+technical_docs:{GDPR:1,AI_ACT:2,NIS2:1,CRA:2,DSA:1,DMA:1,DORA:2,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:1,DGA:1,PSD2:1,RED:2,GPSR:2,CHIPS:0,ECODESIGN:2,EHDS:1,CLOUD_COC:2},
+cybersecurity:{GDPR:2,AI_ACT:1,NIS2:2,CRA:2,DSA:1,DMA:1,DORA:2,MDR:2,IVDR:2,EIDAS:2,DATA_ACT:1,DGA:1,PSD2:2,RED:2,GPSR:1,CHIPS:0,ECODESIGN:0,EHDS:2,CLOUD_COC:2},
+supply_chain:{GDPR:2,AI_ACT:2,NIS2:2,CRA:2,DSA:1,DMA:1,DORA:2,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:1,DGA:1,PSD2:1,RED:1,GPSR:2,CHIPS:2,ECODESIGN:1,EHDS:1,CLOUD_COC:2},
+interoperability:{GDPR:0,AI_ACT:1,NIS2:1,CRA:1,DSA:1,DMA:2,DORA:1,MDR:1,IVDR:1,EIDAS:2,DATA_ACT:2,DGA:2,PSD2:2,RED:2,GPSR:0,CHIPS:1,ECODESIGN:1,EHDS:2,CLOUD_COC:2},
+market_surveillance:{GDPR:2,AI_ACT:2,NIS2:2,CRA:2,DSA:2,DMA:2,DORA:2,MDR:2,IVDR:2,EIDAS:1,DATA_ACT:2,DGA:2,PSD2:2,RED:2,GPSR:2,CHIPS:1,ECODESIGN:2,EHDS:1,CLOUD_COC:2},
+penalties:{GDPR:2,AI_ACT:2,NIS2:2,CRA:2,DSA:2,DMA:2,DORA:2,MDR:1,IVDR:1,EIDAS:1,DATA_ACT:2,DGA:2,PSD2:2,RED:1,GPSR:2,CHIPS:2,ECODESIGN:1,EHDS:1,CLOUD_COC:2},
+user_rights:{GDPR:2,AI_ACT:1,NIS2:0,CRA:0,DSA:2,DMA:2,DORA:0,MDR:1,IVDR:1,EIDAS:2,DATA_ACT:2,DGA:2,PSD2:2,RED:0,GPSR:1,CHIPS:0,ECODESIGN:0,EHDS:2,CLOUD_COC:1},
+human_oversight:{GDPR:2,AI_ACT:2,NIS2:0,CRA:0,DSA:2,DMA:1,DORA:1,MDR:2,IVDR:2,EIDAS:0,DATA_ACT:0,DGA:0,PSD2:1,RED:0,GPSR:1,CHIPS:0,ECODESIGN:0,EHDS:1,CLOUD_COC:0},
+registration:{GDPR:2,AI_ACT:2,NIS2:2,CRA:1,DSA:2,DMA:2,DORA:2,MDR:2,IVDR:2,EIDAS:2,DATA_ACT:1,DGA:2,PSD2:2,RED:1,GPSR:1,CHIPS:2,ECODESIGN:1,EHDS:2,CLOUD_COC:2},
+data_governance:{GDPR:2,AI_ACT:2,NIS2:0,CRA:0,DSA:1,DMA:1,DORA:1,MDR:1,IVDR:1,EIDAS:1,DATA_ACT:2,DGA:2,PSD2:1,RED:0,GPSR:0,CHIPS:0,ECODESIGN:0,EHDS:2,CLOUD_COC:2},
+};
+const CATS={
+DATA:{label:"Data",color:"#2563eb",bg:"#eff6ff",border:"#bfdbfe"},
+SECURITY:{label:"Security",color:"#dc2626",bg:"#fef2f2",border:"#fecaca"},
+GOVERNANCE:{label:"Governance",color:"#7c3aed",bg:"#f5f3ff",border:"#ddd6fe"},
+COMPLIANCE:{label:"Compliance",color:"#059669",bg:"#f0fdf4",border:"#bbf7d0"},
+};
+const CS={
+2:{bg:"#dcfce7",border:"#16a34a",text:"#15803d",sym:"●",label:"Core Obligation"},
+1:{bg:"#eff6ff",border:"#3b82f6",text:"#1d4ed8",sym:"◐",label:"Partial Scope"},
+0:{bg:"transparent",border:"#e5e7eb",text:"#d1d5db",sym:"·",label:"N/A"},
+};
+function det(tid,rid){const td=DET[tid];if(!td)return{risk:"MEDIUM",summary:"Obligation applies within the scope of this regulation.",articles:"See regulation-specific provisions"};return td[rid]||td.DEFAULT||{risk:"MEDIUM",summary:"Obligation applies within the scope of this regulation.",articles:"See regulation-specific provisions"};}
+function Modal({cell,onClose}){
+if(!cell)return null;
+const theme=THEMES.find(t=>t.id===cell.tid);
+const reg=REGS.find(r=>r.id===cell.rid);
+const s=(SC[cell.tid]||{})[cell.rid]??0;
+const cs=CS[s];
+const d=det(cell.tid,cell.rid);
+const rc=RC[d.risk]||"#6b7280";
+return React.createElement("div",{onClick:onClose,style:{position:"fixed",inset:0,background:"rgba(15,15,25,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:"20px",animation:"overlayIn 0.15s ease",backdropFilter:"blur(2px)"}},
+React.createElement("div",{onClick:e=>e.stopPropagation(),style:{background:"#fff",borderRadius:"16px",boxShadow:"0 24px 64px rgba(0,0,0,0.18)",width:"100%",maxWidth:"400px",animation:"fadeIn 0.18s ease",overflow:"hidden",border:"1px solid #e8e5df"}},
+React.createElement("div",{style:{height:"4px",background:`linear-gradient(90deg,${reg.color},${reg.color}88)`}}),
+React.createElement("div",{style:{padding:"16px 18px 12px",borderBottom:"1px solid #f0eeea",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+React.createElement("div",null,
+React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"3px",flexWrap:"wrap"}},
+React.createElement("span",{style:{fontSize:"12px",fontWeight:"700",color:reg.color,background:`${reg.color}12`,padding:"2px 10px",borderRadius:"20px"}},reg.name),
+React.createElement("span",{style:{fontSize:"10px",color:"#9ca3af"}},"×"),
+React.createElement("span",{style:{fontSize:"11px",color:"#6b7280"}},`${theme.icon} ${theme.name}`)
+),
+React.createElement("div",{style:{fontSize:"10px",color:"#9ca3af"}},reg.domain)
+),
+React.createElement("button",{onClick:onClose,style:{background:"#f3f4f6",border:"none",borderRadius:"6px",width:"26px",height:"26px",fontSize:"14px",color:"#6b7280",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"pointer"}},"✕")
+),
+React.createElement("div",{style:{padding:"16px 18px"}},
+React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"14px"}},
+React.createElement("div",{style:{background:cs.bg,border:`1px solid ${cs.border}`,borderRadius:"8px",padding:"9px 11px"}},
+React.createElement("div",{style:{fontSize:"8px",color:cs.text,letterSpacing:"0.1em",fontWeight:"700",marginBottom:"3px"}},"SCOPE"),
+React.createElement("div",{style:{fontSize:"11px",fontWeight:"600",color:cs.text}},cs.label)
+),
+React.createElement("div",{style:{background:`${rc}0f`,border:`1px solid ${rc}33`,borderRadius:"8px",padding:"9px 11px"}},
+React.createElement("div",{style:{fontSize:"8px",color:rc,letterSpacing:"0.1em",fontWeight:"700",marginBottom:"3px"}},"RISK LEVEL"),
+React.createElement("div",{style:{fontSize:"11px",fontWeight:"700",color:rc}},d.risk)
+)
+),
+React.createElement("div",{style:{marginBottom:"12px"}},
+React.createElement("div",{style:{fontSize:"9px",color:"#9ca3af",letterSpacing:"0.1em",fontWeight:"700",marginBottom:"5px"}},"KEY OBLIGATION"),
+React.createElement("p",{style:{fontSize:"12px",color:"#374151",lineHeight:"1.65",margin:0}},d.summary)
+),
+React.createElement("div",{style:{background:"#f8f7f4",borderRadius:"8px",padding:"9px 12px",borderLeft:`3px solid ${reg.color}`}},
+React.createElement("div",{style:{fontSize:"8px",color:"#9ca3af",letterSpacing:"0.1em",fontWeight:"700",marginBottom:"3px"}},"LEGAL REFERENCE"),
+React.createElement("div",{style:{fontSize:"11px",color:"#4b5563",lineHeight:"1.5"}},d.articles)
+)
+),
+React.createElement("div",{style:{padding:"8px 18px",borderTop:"1px solid #f0eeea",textAlign:"right"}},
+React.createElement("span",{style:{fontSize:"8px",color:"#d1d5db",letterSpacing:"0.05em"}},"EU COMPLIANCE NAVIGATOR · ZEINAB DAOUHANY BOVY")
+)
+)
+);
+}
+function App(){
+const[hovT,setHovT]=useState(null);
+const[hovR,setHovR]=useState(null);
+const[popup,setPopup]=useState(null);
+const[cat,setCat]=useState("ALL");
+const themes=cat==="ALL"?THEMES:THEMES.filter(t=>t.category===cat);
+const tScore=t=>Object.values(SC[t.id]||{}).filter(v=>v===2).length;
+const rScore=id=>THEMES.filter(t=>(SC[t.id]||{})[id]===2).length;
+return React.createElement("div",{style:{minHeight:"100vh",background:"#f8f7f4",padding:"24px"}},
+React.createElement("div",{style:{marginBottom:"20px",paddingBottom:"18px",borderBottom:"2px solid #e8e5df"}},
+React.createElement("div",{style:{fontSize:"9px",color:"#9ca3af",letterSpacing:"0.2em",marginBottom:"4px",fontWeight:"600"}},"DIGITAL VALUE ARCHITECT · ZEINAB DAOUHANY BOVY"),
+React.createElement("h1",{style:{fontSize:"22px",fontWeight:"700",color:"#1a1a2e",fontFamily:"'Playfair Display',serif",marginBottom:"4px"}},"EU Regulatory Cross-Reference Matrix"),
+React.createElement("p",{style:{fontSize:"11px",color:"#9ca3af"}},"15 compliance themes × 19 regulations · Click any coloured cell for risk classification and legal references")
+),
+React.createElement("div",{style:{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:"10px",marginBottom:"18px",alignItems:"center"}},
+React.createElement("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap"}},
+["ALL","DATA","SECURITY","GOVERNANCE","COMPLIANCE"].map(c=>React.createElement("button",{key:c,onClick:()=>setCat(c),style:{padding:"4px 12px",fontSize:"10px",letterSpacing:"0.06em",fontWeight:"600",borderRadius:"20px",border:"1px solid",transition:"all 0.15s",background:cat===c?(c==="ALL"?"#1a1a2e":CATS[c]?.bg||"#1a1a2e"):"#fff",borderColor:cat===c?(c==="ALL"?"#1a1a2e":CATS[c]?.border||"#1a1a2e"):"#e5e7eb",color:cat===c?(c==="ALL"?"#fff":CATS[c]?.color||"#fff"):"#9ca3af"}},c))
+),
+React.createElement("div",{style:{display:"flex",gap:"12px",fontSize:"10px",color:"#9ca3af",alignItems:"center",flexWrap:"wrap"}},
+[2,1].map(v=>React.createElement("span",{key:v,style:{display:"flex",alignItems:"center",gap:"4px"}},React.createElement("span",{style:{width:"9px",height:"9px",borderRadius:"2px",display:"inline-block",background:CS[v].bg,border:`1px solid ${CS[v].border}`}}),CS[v].label)),
+React.createElement("span",{style:{fontSize:"9px",color:"#d1d5db",fontStyle:"italic"}},"Click any cell for details")
+)
+),
+React.createElement("div",{style:{overflowX:"auto",background:"#fff",borderRadius:"12px",border:"1px solid #e8e5df",boxShadow:"0 1px 10px rgba(0,0,0,0.05)"}},
+React.createElement("table",{style:{borderCollapse:"collapse",width:"100%",minWidth:"920px"}},
+React.createElement("thead",null,
+React.createElement("tr",{style:{borderBottom:"2px solid #e8e5df"}},
+React.createElement("th",{style:{width:"220px",minWidth:"220px",padding:"10px 14px",textAlign:"left",fontSize:"8px",color:"#9ca3af",letterSpacing:"0.15em",fontWeight:"700",background:"#fff",position:"sticky",left:0,zIndex:2,borderRight:"1px solid #f0eeea"}},"THEME / REGULATION →"),
+...REGS.map(r=>React.createElement("th",{key:r.id,onMouseEnter:()=>setHovR(r.id),onMouseLeave:()=>setHovR(null),style:{padding:"5px 2px",textAlign:"center",background:hovR===r.id?"#fafaf9":"#fff",transition:"background 0.12s",minWidth:"44px"}},
+React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",gap:"3px"}},
+React.createElement("div",{style:{fontSize:"9px",fontWeight:"700",color:r.color,writingMode:"vertical-rl",transform:"rotate(180deg)",height:"62px",display:"flex",alignItems:"center"}},r.name),
+React.createElement("div",{style:{fontSize:"8px",color:"#9ca3af",background:"#f3f4f6",borderRadius:"10px",padding:"1px 4px",fontWeight:"600"}},rScore(r.id))
+)
+)),
+React.createElement("th",{style:{padding:"5px 10px",textAlign:"center",fontSize:"8px",color:"#9ca3af",fontWeight:"700",whiteSpace:"nowrap"}},"CORE #")
+)
+),
+React.createElement("tbody",null,
+themes.map((theme,ti)=>{
+const cs2=CATS[theme.category];
+const sc=SC[theme.id]||{};
+return React.createElement("tr",{key:theme.id,onMouseEnter:()=>setHovT(theme.id),onMouseLeave:()=>setHovT(null),style:{background:hovT===theme.id?"#fafaf9":ti%2===0?"#fff":"#fdfcfb",transition:"background 0.1s",borderBottom:"1px solid #f5f4f1"}},
+React.createElement("td",{style:{padding:"7px 14px",position:"sticky",left:0,zIndex:1,background:hovT===theme.id?"#fafaf9":ti%2===0?"#fff":"#fdfcfb",borderRight:"1px solid #f0eeea"}},
+React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"7px"}},
+React.createElement("span",{style:{fontSize:"13px",flexShrink:0}},theme.icon),
+React.createElement("div",null,
+React.createElement("div",{style:{fontSize:"11px",fontWeight:"600",color:"#1a1a2e",fontFamily:"'Playfair Display',serif",lineHeight:"1.2"}},theme.name),
+React.createElement("span",{style:{fontSize:"7px",padding:"1px 6px",borderRadius:"10px",background:cs2.bg,color:cs2.color,border:`1px solid ${cs2.border}`,letterSpacing:"0.08em",fontWeight:"700",display:"inline-block",marginTop:"2px"}},cs2.label)
+)
+)
+),
+...REGS.map(r=>{
+const s=sc[r.id]??0;
+const c=CS[s];
+const hi=hovR===r.id||hovT===theme.id;
+return React.createElement("td",{key:r.id,onClick:()=>s>0&&setPopup({tid:theme.id,rid:r.id}),style:{padding:"2px",textAlign:"center",cursor:s>0?"pointer":"default"}},
+React.createElement("div",{style:{width:"26px",height:"26px",borderRadius:"6px",background:s>0?c.bg:"transparent",border:`1px solid ${hi&&s>0?c.border:s>0?c.border+"99":"#ede9e3"}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto",transition:"all 0.1s",transform:hi&&s>0?"scale(1.18)":"scale(1)",boxShadow:hi&&s>0?"0 2px 8px rgba(0,0,0,0.1)":"none",fontSize:s===2?"12px":"11px",color:c.text,fontWeight:"bold"}},c.sym)
+);
+}),
+React.createElement("td",{style:{textAlign:"center",padding:"2px 10px"}},
+React.createElement("span",{style:{fontSize:"11px",fontWeight:"700",color:tScore(theme)>=12?"#16a34a":tScore(theme)>=8?"#2563eb":"#d97706"}},`${tScore(theme)}/${REGS.length}`)
+)
+);
+})
+)
+)
+),
+React.createElement("div",{style:{marginTop:"18px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))",gap:"10px"}},
+React.createElement("div",{style:{background:"#fff",border:"1px solid #e8e5df",borderRadius:"10px",padding:"14px"}},
+React.createElement("div",{style:{fontSize:"8px",color:"#9ca3af",letterSpacing:"0.15em",fontWeight:"700",marginBottom:"10px"}},"TOP UNIVERSAL THEMES"),
+[...THEMES].sort((a,b)=>tScore(b)-tScore(a)).slice(0,4).map(t=>React.createElement("div",{key:t.id,style:{display:"flex",justifyContent:"space-between",marginBottom:"6px",alignItems:"center"}},React.createElement("span",{style:{fontSize:"10px",color:"#374151"}},`${t.icon} ${t.name}`),React.createElement("span",{style:{fontSize:"10px",color:"#16a34a",fontWeight:"700",background:"#f0fdf4",padding:"1px 6px",borderRadius:"10px"}},tScore(t))))
+),
+React.createElement("div",{style:{background:"#fff",border:"1px solid #e8e5df",borderRadius:"10px",padding:"14px"}},
+React.createElement("div",{style:{fontSize:"8px",color:"#9ca3af",letterSpacing:"0.15em",fontWeight:"700",marginBottom:"10px"}},"MOST DEMANDING REGULATIONS"),
+[...REGS].sort((a,b)=>rScore(b.id)-rScore(a.id)).slice(0,5).map(r=>React.createElement("div",{key:r.id,style:{display:"flex",justifyContent:"space-between",marginBottom:"6px",alignItems:"center"}},React.createElement("span",{style:{fontSize:"10px",fontWeight:"700",color:r.color}},r.name),React.createElement("span",{style:{fontSize:"9px",color:"#9ca3af"}},`${rScore(r.id)}/${THEMES.length} themes`)))
+),
+React.createElement("div",{style:{background:"#fff",border:"1px solid #e8e5df",borderRadius:"10px",padding:"14px"}},
+React.createElement("div",{style:{fontSize:"8px",color:"#9ca3af",letterSpacing:"0.15em",fontWeight:"700",marginBottom:"10px"}},"RISK CLASSIFICATION"),
+Object.entries(RC).map(([k,v])=>React.createElement("div",{key:k,style:{display:"flex",alignItems:"center",gap:"7px",marginBottom:"6px"}},React.createElement("div",{style:{width:"8px",height:"8px",borderRadius:"50%",background:v,flexShrink:0}}),React.createElement("span",{style:{fontSize:"10px",fontWeight:"600",color:v}},k))),
+React.createElement("div",{style:{fontSize:"9px",color:"#9ca3af",marginTop:"6px",fontStyle:"italic"}},"Click any cell to see classification")
+),
+React.createElement("div",{style:{background:"#fff",border:"1px solid #ddd6fe",borderRadius:"10px",padding:"14px"}},
+React.createElement("div",{style:{fontSize:"8px",color:"#7c3aed",letterSpacing:"0.15em",fontWeight:"700",marginBottom:"8px"}},"CONSULTANT INSIGHT"),
+React.createElement("p",{style:{fontSize:"10px",color:"#6b7280",lineHeight:"1.7",fontStyle:"italic",fontFamily:"'Playfair Display',serif"}},"Market Surveillance, Penalties, and Registration appear across nearly every regulation. Your fastest entry points for a compliance audit with any client."),
+React.createElement("div",{style:{fontSize:"8px",color:"#c4b5fd",marginTop:"8px",letterSpacing:"0.08em"}},"TRL 5 · INCREMENTAL UPDATES PLANNED")
+)
+),
+React.createElement("div",{style:{marginTop:"14px",fontSize:"8px",color:"#d1d5db",textAlign:"right",letterSpacing:"0.05em"}},"© ZEINAB DAOUHANY BOVY · DIGITAL VALUE ARCHITECT · EU COMPLIANCE NAVIGATOR"),
+React.createElement(Modal,{cell:popup,onClose:()=>setPopup(null)})
+);
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
